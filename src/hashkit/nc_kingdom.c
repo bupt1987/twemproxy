@@ -131,17 +131,23 @@ kingdom_update(struct server_pool *pool) {
 
 uint32_t
 kingdom_dispatch(struct continuum *continuum, uint32_t ncontinuum, uint32_t hash) {
-    struct continuum *c;
-
     ASSERT(continuum != NULL);
     ASSERT(ncontinuum != 0);
+
+	if (hash > ncontinuum) {
+		return ncontinuum;
+	}
 
     return hash - 1;
 }
 
 uint32_t
 hash_kingdom(const char *key, size_t key_length) {
-    ASSERT(*key == 'k');
+
+	if (*key != 'k') {
+		log_error("key do not match (^k\\d:.+)");
+		return 4294967295;
+	}
 
     uint64_t x;
     bool found = false;
@@ -155,7 +161,10 @@ hash_kingdom(const char *key, size_t key_length) {
         *key++;
     }
 
-    ASSERT(found);
+    if (!found) {
+    	log_error("key do not match (^k\\d:.+)");
+    	return 4294967295;
+    }
 
     char kingdomId[x - 1];
     strncpy(kingdomId, ++tmp, --x);

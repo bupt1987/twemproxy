@@ -334,6 +334,12 @@ rsp_send_next(struct context *ctx, struct conn *conn)
             conn->err = errno;
             return NULL;
         }
+
+        if (msg->error == 1) {
+        	conn->err = errno;
+            return NULL;
+        }
+
         msg->peer = pmsg;
         pmsg->peer = msg;
         stats_pool_incr(ctx, conn->owner, forward_error);

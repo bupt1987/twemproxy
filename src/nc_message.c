@@ -337,7 +337,11 @@ msg_get_error(bool redis, err_t err)
     }
 
     msg->state = 0;
-    msg->type = MSG_RSP_MC_SERVER_ERROR;
+    msg->type = redis ? MSG_RSP_REDIS_ERROR_ERR : MSG_RSP_MC_SERVER_ERROR;
+    // 如果是 Broken pipe 或者 Connection refused
+    if (err == 61 || err == 32) {
+    	msg->error = 1;
+    }
 
     mbuf = mbuf_get();
     if (mbuf == NULL) {
