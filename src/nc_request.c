@@ -17,6 +17,7 @@
 
 #include <nc_core.h>
 #include <nc_server.h>
+#include <unistd.h>
 
 struct msg *
 req_get(struct conn *conn)
@@ -580,6 +581,7 @@ req_forward(struct context *ctx, struct conn *c_conn, struct msg *msg)
     if (s_conn == NULL) {
         req_forward_error(ctx, c_conn, msg);
         c_conn->err = errno;
+        usleep(500);
         return;
     }
     ASSERT(!s_conn->client && !s_conn->proxy);
