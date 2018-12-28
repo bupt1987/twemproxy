@@ -26,8 +26,7 @@
 #define KINGDOM_POINTS_PER_SERVER    1
 
 rstatus_t
-kingdom_update(struct server_pool *pool)
-{
+kingdom_update(struct server_pool *pool) {
     uint32_t nserver;             /* # server - live and dead */
     uint32_t nlive_server;        /* # live server */
     uint32_t pointer_per_server;  /* pointers per server proportional to weight */
@@ -88,14 +87,12 @@ kingdom_update(struct server_pool *pool)
     if (nlive_server > pool->nserver_continuum) {
         struct continuum *continuum;
         uint32_t nserver_continuum = nlive_server + KINGDOM_CONTINUUM_ADDITION;
-        uint32_t ncontinuum = nserver_continuum *  KINGDOM_POINTS_PER_SERVER;
+        uint32_t ncontinuum = nserver_continuum * KINGDOM_POINTS_PER_SERVER;
 
         continuum = nc_realloc(pool->continuum, sizeof(*continuum) * ncontinuum);
         if (continuum == NULL) {
             return NC_ENOMEM;
         }
-
-        srandom((uint32_t)time(NULL));
 
         pool->continuum = continuum;
         pool->nserver_continuum = nserver_continuum;
@@ -133,45 +130,37 @@ kingdom_update(struct server_pool *pool)
 }
 
 uint32_t
-kingdom_dispatch(struct continuum *continuum, uint32_t ncontinuum, uint32_t hash)
-{
+kingdom_dispatch(struct continuum *continuum, uint32_t ncontinuum, uint32_t hash) {
     struct continuum *c;
 
     ASSERT(continuum != NULL);
     ASSERT(ncontinuum != 0);
 
-    c = continuum + hash;
-
-    return c->index;
+    return hash - 1;
 }
 
 uint32_t
-hash_kingdom(const char *key, size_t key_length)
-{
+hash_kingdom(const char *key, size_t key_length) {
+    ASSERT(*key == 'k');
+
     uint64_t x;
-    uint32_t crc = 0;
+    bool found = false;
+    const char *tmp = key;
 
-    ASSERT(*key == 'k')
-
-	bool found = false;
-    char *a;
-
-    for (x=0; x < key_length; x++) {
-    	if (x == 0) {
-    		*key++;
-    		continue;
-    	}
-
-    	if (*key == ':') {
-    		*a++ = '\0';
+    for (x = 0; x < key_length; x++) {
+        if (*key == ':') {
             found = true;
             break;
         }
-
-		*a++ = *key++;
+        *key++;
     }
 
-    ASSERT(found)
+    ASSERT(found);
 
-    return atoi(a);
+    char kingdomId[x - 1];
+    strncpy(kingdomId, ++tmp, --x);
+
+    uint32_t index = atoi(kingdomId);
+
+    return index;
 }

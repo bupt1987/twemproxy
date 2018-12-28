@@ -1,0 +1,13 @@
+kingdom:
+  listen: 127.0.0.1:12345
+  hash: kingdom
+  distribution: kingdom
+  timeout: 400
+  redis: true
+  auto_eject_hosts: false
+  preconnect: true
+  servers:
+   - 127.0.0.1:6001:1 k1
+   - 127.0.0.1:6002:1 k2
+   - 127.0.0.1:6003:1 k3
+

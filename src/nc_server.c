@@ -685,6 +685,11 @@ server_pool_idx(struct server_pool *pool, uint8_t *key, uint32_t keylen)
         idx = random_dispatch(pool->continuum, pool->ncontinuum, 0);
         break;
 
+    case DIST_KINGDOM:
+        hash = server_pool_hash(pool, key, keylen);
+        idx = kingdom_dispatch(pool->continuum, pool->ncontinuum, hash);
+        return idx;
+
     default:
         NOT_REACHED();
         return 0;
@@ -700,6 +705,11 @@ server_pool_server(struct server_pool *pool, uint8_t *key, uint32_t keylen)
     uint32_t idx;
 
     idx = server_pool_idx(pool, key, keylen);
+
+    if (pool->dist_type == DIST_KINGDOM && idx >= array_n(&pool->server)) {
+        return NULL;
+    }
+
     server = array_get(&pool->server, idx);
 
     log_debug(LOG_VERB, "key '%.*s' on dist %d maps to server '%.*s'", keylen,
@@ -831,12 +841,14 @@ server_pool_run(struct server_pool *pool)
     case DIST_RANDOM:
         return random_update(pool);
 
+    case DIST_KINGDOM:
+        return kingdom_update(pool);
+
     default:
         NOT_REACHED();
         return NC_ERROR;
     }
 
-    return NC_OK;
 }
 
 static rstatus_t
