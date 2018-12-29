@@ -2,6 +2,21 @@
 
 **twemproxy** (pronounced "two-em-proxy"), aka **nutcracker** is a fast and lightweight proxy for [memcached](http://www.memcached.org/) and [redis](http://redis.io/) protocol. It was built primarily to reduce the number of connections to the caching servers on the backend. This, together with protocol pipelining and sharding enables you to horizontally scale your distributed caching architecture.
 
+## 特别说明
+
+新增hash和distribution方法：server_name 现在只支持redis
+
+配置见 [conf/nutcracker.server_name.yml](conf/nutcracker.server_name.yml)
+
+    根据key的前缀（ server_name: ）中的server_name 来匹配配置servers里面配置的 server_name
+    例如配置：
+         servers
+            127.0.0.1:12345:1 server1
+            127.0.0.1:22345:1 server2
+    如果 key 为 server1:xxx 就会使用 "127.0.0.1:12345:1 server1" 这个redis server
+    使用 server_name 必须 auto_eject_hosts 为 false, 并且不能配置 hash_tag
+    详细配置见 
+
 ## Build
 
 To build twemproxy from [distribution tarball](https://drive.google.com/open?id=0B6pVMMV5F5dfMUdJV25abllhUWM&authuser=0):
@@ -95,11 +110,13 @@ Twemproxy can be configured through a YAML file specified by the -c or --conf-fi
  + hsieh
  + murmur
  + jenkins
+ + server_name
 + **hash_tag**: A two character string that specifies the part of the key used for hashing. Eg "{}" or "$$". [Hash tag](notes/recommendation.md#hash-tags) enable mapping different keys to the same server as long as the part of the key within the tag is the same.
 + **distribution**: The key distribution mode. Possible values are:
  + ketama
  + modula
  + random
+ + server_name
 + **timeout**: The timeout value in msec that we wait for to establish a connection to the server or receive a response from a server. By default, we wait indefinitely.
 + **backlog**: The TCP backlog argument. Defaults to 512.
 + **preconnect**: A boolean value that controls if twemproxy should preconnect to all the servers in this pool on process start. Defaults to false.
