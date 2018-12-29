@@ -685,9 +685,9 @@ server_pool_idx(struct server_pool *pool, uint8_t *key, uint32_t keylen)
         idx = random_dispatch(pool->continuum, pool->ncontinuum, 0);
         break;
 
-    case DIST_KINGDOM:
-        hash = hash_kingdom(pool, (char *)key, keylen);
-        idx = kingdom_dispatch(pool->continuum, pool->ncontinuum, hash);
+    case DIST_SERVER_NAME:
+        hash = hash_server_name(pool, (char *)key, keylen);
+        idx = server_name_dispatch(pool->continuum, pool->ncontinuum, hash);
         return idx;
 
     default:
@@ -706,7 +706,7 @@ server_pool_server(struct server_pool *pool, uint8_t *key, uint32_t keylen)
 
     idx = server_pool_idx(pool, key, keylen);
 
-    if (pool->dist_type == DIST_KINGDOM && idx >= array_n(&pool->server)) {
+    if (pool->dist_type == DIST_SERVER_NAME && idx >= array_n(&pool->server)) {
         return NULL;
     }
 
@@ -841,8 +841,8 @@ server_pool_run(struct server_pool *pool)
     case DIST_RANDOM:
         return random_update(pool);
 
-    case DIST_KINGDOM:
-        return kingdom_update(pool);
+    case DIST_SERVER_NAME:
+        return server_name_update(pool);
 
     default:
         NOT_REACHED();

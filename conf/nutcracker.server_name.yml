@@ -1,8 +1,8 @@
 kingdom:
 #  listen: /tmp/twemproxy.sock
   listen: 127.0.0.1:12345
-  hash: kingdom
-  distribution: kingdom
+  hash: server_name
+  distribution: server_name
   timeout: 400
   redis: true
   auto_eject_hosts: false

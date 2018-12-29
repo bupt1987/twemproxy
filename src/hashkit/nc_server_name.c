@@ -29,7 +29,7 @@
 #define KINGDOM_SPLIT_CHAR (':')
 
 rstatus_t
-kingdom_update(struct server_pool *pool) {
+server_name_update(struct server_pool *pool) {
     uint32_t nserver;             /* # server - live and dead */
     uint32_t nlive_server;        /* # live server */
     uint32_t pointer_per_server;  /* pointers per server proportional to weight */
@@ -130,7 +130,7 @@ kingdom_update(struct server_pool *pool) {
 }
 
 uint32_t
-kingdom_dispatch(struct continuum *continuum, uint32_t ncontinuum, uint32_t hash) {
+server_name_dispatch(struct continuum *continuum, uint32_t ncontinuum, uint32_t hash) {
     ASSERT(continuum != NULL);
     ASSERT(ncontinuum != 0);
 
@@ -142,7 +142,7 @@ kingdom_dispatch(struct continuum *continuum, uint32_t ncontinuum, uint32_t hash
 }
 
 uint32_t
-hash_kingdom(struct server_pool *pool, const char *key, size_t key_length) {
+hash_server_name(struct server_pool *pool, const char *key, size_t key_length) {
 
     int x;
     bool found = false;

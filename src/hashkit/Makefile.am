@@ -20,5 +20,5 @@ libhashkit_a_SOURCES =		\
 	nc_modula.c		\
 	nc_murmur.c		\
 	nc_one_at_a_time.c	\
-	nc_kingdom.c	\
+	nc_server_name.c	\
 	nc_random.c
