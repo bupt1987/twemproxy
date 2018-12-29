@@ -1,4 +1,5 @@
 kingdom:
+#  listen: /tmp/twemproxy.sock
   listen: 127.0.0.1:12345
   hash: kingdom
   distribution: kingdom

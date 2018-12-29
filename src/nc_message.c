@@ -116,6 +116,11 @@ static struct msg_tqh free_msgq; /* free msg q */
 static struct rbtree tmo_rbt;    /* timeout rbtree */
 static struct rbnode tmo_rbs;    /* timeout rbtree sentinel */
 
+#define REDIS_MASTERDOWN_ERRNO  errno
+#define REDIS_MASTERDOWN_ERRNO_32 32
+#define REDIS_MASTERDOWN_ERRNO_61 61
+
+
 #define DEFINE_ACTION(_name) string(#_name),
 static struct string msg_type_strings[] = {
     MSG_TYPE_CODEC( DEFINE_ACTION )
@@ -329,7 +334,11 @@ msg_get_error(bool redis, err_t err)
     struct mbuf *mbuf;
     int n;
     char *errstr = err ? strerror(err) : "unknown";
-    char *protstr = redis ? "-ERR" : "SERVER_ERROR";
+
+    // 如果是 Resource temporarily unavailable（0） 或者 Broken pipe(32) 或者 Connection refused (61)
+    char *protstr = redis
+            ? ((err == REDIS_MASTERDOWN_ERRNO || err == REDIS_MASTERDOWN_ERRNO_32 || err == REDIS_MASTERDOWN_ERRNO_61) ? "-MASTERDOWN" : "-ERR")
+            : "SERVER_ERROR";
 
     msg = _msg_get();
     if (msg == NULL) {
@@ -338,10 +347,6 @@ msg_get_error(bool redis, err_t err)
 
     msg->state = 0;
     msg->type = redis ? MSG_RSP_REDIS_ERROR_ERR : MSG_RSP_MC_SERVER_ERROR;
-    // 如果是 Broken pipe 或者 Connection refused
-    if (err == 61 || err == 32) {
-    	msg->error = 1;
-    }
 
     mbuf = mbuf_get();
     if (mbuf == NULL) {
