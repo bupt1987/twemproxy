@@ -19,6 +19,7 @@
 #define _NC_SERVER_H_
 
 #include <nc_core.h>
+#include <hash_map.h>
 
 /*
  * server_pool is a collection of servers and their continuum. Each
@@ -95,6 +96,7 @@ struct server_pool {
     struct array       server;               /* server[] */
     uint32_t           ncontinuum;           /* # continuum points */
     uint32_t           nserver_continuum;    /* # servers - live and dead on continuum (const) */
+    map_t              hm_server;            /* 根据 server 的 name 为key, index 为 val 的hashmap*/
     struct continuum   *continuum;           /* continuum */
     uint32_t           nlive_server;         /* # live server */
     int64_t            next_rebuild;         /* next distribution rebuild time in usec */

@@ -686,7 +686,7 @@ server_pool_idx(struct server_pool *pool, uint8_t *key, uint32_t keylen)
         break;
 
     case DIST_KINGDOM:
-        hash = server_pool_hash(pool, key, keylen);
+        hash = hash_kingdom(pool, (char *)key, keylen);
         idx = kingdom_dispatch(pool->continuum, pool->ncontinuum, hash);
         return idx;
 

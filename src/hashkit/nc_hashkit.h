@@ -69,7 +69,7 @@ uint32_t hash_fnv1a_32(const char *key, size_t key_length);
 uint32_t hash_hsieh(const char *key, size_t key_length);
 uint32_t hash_jenkins(const char *key, size_t length);
 uint32_t hash_murmur(const char *key, size_t length);
-uint32_t hash_kingdom(const char *key, size_t length);
+uint32_t hash_kingdom(struct server_pool *pool, const char *key, size_t length);
 
 rstatus_t ketama_update(struct server_pool *pool);
 uint32_t ketama_dispatch(struct continuum *continuum, uint32_t ncontinuum, uint32_t hash);

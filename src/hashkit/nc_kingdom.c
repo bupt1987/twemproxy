@@ -21,9 +21,12 @@
 #include <nc_core.h>
 #include <nc_server.h>
 #include <nc_hashkit.h>
+#include <hash_map.h>
 
 #define KINGDOM_CONTINUUM_ADDITION   10  /* # extra slots to build into continuum */
 #define KINGDOM_POINTS_PER_SERVER    1
+#define MAX_SERVER_NAME_LEN          86
+#define KINGDOM_SPLIT_CHAR (':')
 
 rstatus_t
 kingdom_update(struct server_pool *pool) {
@@ -36,30 +39,21 @@ kingdom_update(struct server_pool *pool) {
     uint32_t continuum_addition;  /* extra space in the continuum */
     uint32_t server_index;        /* server index */
     int64_t now;                  /* current timestamp in usec */
+    int error;
 
     now = nc_usec_now();
     if (now < 0) {
         return NC_ERROR;
     }
 
+    ASSERT(!pool->auto_eject_hosts);
+
     nserver = array_n(&pool->server);
     nlive_server = 0;
     pool->next_rebuild = 0LL;
 
     for (server_index = 0; server_index < nserver; server_index++) {
-        struct server *server = array_get(&pool->server, server_index);
-
-        if (pool->auto_eject_hosts) {
-            if (server->next_retry <= now) {
-                server->next_retry = 0LL;
-                nlive_server++;
-            } else if (pool->next_rebuild == 0LL ||
-                       server->next_retry < pool->next_rebuild) {
-                pool->next_rebuild = server->next_retry;
-            }
-        } else {
-            nlive_server++;
-        }
+        nlive_server++;
     }
 
     pool->nlive_server = nlive_server;
@@ -99,15 +93,15 @@ kingdom_update(struct server_pool *pool) {
         /* pool->ncontinuum is initialized later as it could be <= ncontinuum */
     }
 
+    pool->hm_server = hashmap_new();
+
     /* update the continuum with the servers that are live */
     continuum_index = 0;
     pointer_counter = 0;
     for (server_index = 0; server_index < nserver; server_index++) {
         struct server *server = array_get(&pool->server, server_index);
 
-        if (pool->auto_eject_hosts && server->next_retry > now) {
-            continue;
-        }
+        ASSERT(server->name.len > 0);
 
         pointer_per_server = 1;
 
@@ -115,6 +109,12 @@ kingdom_update(struct server_pool *pool) {
         pool->continuum[continuum_index++].value = 0;
 
         pointer_counter += pointer_per_server;
+
+        error = hashmap_put(pool->hm_server, server->name.data, server_index);
+        ASSERT(error == MAP_OK);
+
+        log_debug(LOG_VERB, "add server %s in hm_server", server->name.data);
+
     }
     pool->ncontinuum = pointer_counter;
 
@@ -134,27 +134,22 @@ kingdom_dispatch(struct continuum *continuum, uint32_t ncontinuum, uint32_t hash
     ASSERT(continuum != NULL);
     ASSERT(ncontinuum != 0);
 
-	if (hash > ncontinuum) {
-		return ncontinuum;
-	}
+    if (hash >= ncontinuum) {
+        return ncontinuum;
+    }
 
-    return hash - 1;
+    return hash;
 }
 
 uint32_t
-hash_kingdom(const char *key, size_t key_length) {
+hash_kingdom(struct server_pool *pool, const char *key, size_t key_length) {
 
-	if (*key != 'k') {
-		log_error("key do not match (^k\\d:.+)");
-		return 4294967295;
-	}
-
-    uint64_t x;
+    int x;
     bool found = false;
     const char *tmp = key;
 
     for (x = 0; x < key_length; x++) {
-        if (*key == ':') {
+        if (*key == KINGDOM_SPLIT_CHAR) {
             found = true;
             break;
         }
@@ -162,14 +157,20 @@ hash_kingdom(const char *key, size_t key_length) {
     }
 
     if (!found) {
-    	log_error("key do not match (^k\\d:.+)");
-    	return 4294967295;
+        log_error("key do not match (^\\w+:.+)");
+        return pool->ncontinuum;
     }
 
-    char kingdomId[x - 1];
-    strncpy(kingdomId, ++tmp, --x);
+    char server_name[MAX_SERVER_NAME_LEN] = "";
+    snprintf(server_name, MAX_SERVER_NAME_LEN, "%.*s", x, tmp);
 
-    uint32_t index = atoi(kingdomId);
+    uint32_t index;
+    int error = hashmap_get(pool->hm_server, server_name, &index);
+
+    if (error != MAP_OK) {
+        log_error("do not found match server by key: %.*s", key_length, tmp);
+        return pool->ncontinuum;
+    }
 
     return index;
 }
